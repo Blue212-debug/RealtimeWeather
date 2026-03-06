@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather App</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a 45%, #38bdf8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 920px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.25);
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: 2rem;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 220px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 14px 18px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary-btn {
+      background: #fff;
+      color: #0f172a;
+    }
+
+    .secondary-btn {
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    .status {
+      min-height: 24px;
+      margin-bottom: 14px;
+      opacity: 0.95;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.10);
+      border-radius: 20px;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .location {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .muted {
+      opacity: 0.82;
+      font-size: 0.95rem;
+    }
+
+    .temp {
+      font-size: 4rem;
+      font-weight: 700;
+      margin: 14px 0 6px;
+      line-height: 1;
+    }
+
+    .desc {
+      font-size: 1.1rem;
+      margin-bottom: 18px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.82;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .forecast-title {
+      margin: 0 0 14px;
+      font-size: 1.15rem;
+    }
+
+    .forecast-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .forecast-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .temp {
+        font-size: 3.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Weather Finder</h1>
+
+    <div class="search-row">
+      <input id="cityInput" type="text" placeholder="Type any city... e.g. Paris, Tokyo, Casablanca" />
+      <button class="primary-btn" id="searchBtn">Search</button>
+      <button class="secondary-btn" id="locationBtn">Use my location</button>
+    </div>
+
+    <div class="status" id="status">Search a city to get live weather.</div>
+
+    <div id="weatherContent" class="grid hidden">
+      <div class="card">
+        <div class="location" id="locationName">--</div>
+        <div class="muted" id="localTime">--</div>
+        <div class="temp" id="temperature">--°C</div>
+        <div class="desc" id="description">--</div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Feels like</div>
+            <div class="stat-value" id="apparentTemp">--</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Wind</div>
+            <div class="stat-value" id="windSpeed">--</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Humidity</div>
+            <div class="stat-value" id="humidity">--</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Rain</div>
+            <div class="stat-value" id="rain">--</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="forecast-title">Next 5 days</h2>
+        <div class="forecast-list" id="forecastList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cityInput = document.getElementById('cityInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const locationBtn = document.getElementById('locationBtn');
+    const statusEl = document.getElementById('status');
+    const weatherContent = document.getElementById('weatherContent');
+
+    const locationNameEl = document.getElementById('locationName');
+    const localTimeEl = document.getElementById('localTime');
+    const temperatureEl = document.getElementById('temperature');
+    const descriptionEl = document.getElementById('description');
+    const apparentTempEl = document.getElementById('apparentTemp');
+    const windSpeedEl = document.getElementById('windSpeed');
+    const humidityEl = document.getElementById('humidity');
+    const rainEl = document.getElementById('rain');
+    const forecastListEl = document.getElementById('forecastList');
+
+    const weatherCodeMap = {
+      0: 'Clear sky',
+      1: 'Mainly clear',
+      2: 'Partly cloudy',
+      3: 'Overcast',
+      45: 'Fog',
+      48: 'Depositing rime fog',
+      51: 'Light drizzle',
+      53: 'Moderate drizzle',
+      55: 'Dense drizzle',
+      56: 'Light freezing drizzle',
+      57: 'Dense freezing drizzle',
+      61: 'Slight rain',
+      63: 'Moderate rain',
+      65: 'Heavy rain',
+      66: 'Light freezing rain',
+      67: 'Heavy freezing rain',
+      71: 'Slight snow fall',
+      73: 'Moderate snow fall',
+      75: 'Heavy snow fall',
+      77: 'Snow grains',
+      80: 'Slight rain showers',
+      81: 'Moderate rain showers',
+      82: 'Violent rain showers',
+      85: 'Slight snow showers',
+      86: 'Heavy snow showers',
+      95: 'Thunderstorm',
+      96: 'Thunderstorm with slight hail',
+      99: 'Thunderstorm with heavy hail'
+    };
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? '#fecaca' : '#ffffff';
+    }
+
+    function formatLocalTime(dateStr, timezone) {
+      try {
+        return new Intl.DateTimeFormat('en-US', {
+          dateStyle: 'full',
+          timeStyle: 'short',
+          timeZone: timezone
+        }).format(new Date(dateStr));
+      } catch {
+        return dateStr;
+      }
+    }
+
+    function formatDay(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    async function searchCity(city) {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to find city.');
+      const data = await res.json();
+      if (!data.results || !data.results.length) throw new Error('City not found.');
+      return data.results[0];
+    }
+
+    async function fetchWeather(latitude, longitude) {
+      const params = new URLSearchParams({
+        latitude,
+        longitude,
+        current: 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m',
+        daily: 'weather_code,temperature_2m_max,temperature_2m_min',
+        timezone: 'auto',
+        forecast_days: '5'
+      });
+
+      const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch weather data.');
+      return res.json();
+    }
+
+    function renderWeather(placeLabel, weather) {
+      weatherContent.classList.remove('hidden');
+
+      locationNameEl.textContent = placeLabel;
+      localTimeEl.textContent = formatLocalTime(weather.current.time, weather.timezone);
+      temperatureEl.textContent = `${Math.round(weather.current.temperature_2m)}°C`;
+      descriptionEl.textContent = weatherCodeMap[weather.current.weather_code] || 'Unknown weather';
+      apparentTempEl.textContent = `${Math.round(weather.current.apparent_temperature)}°C`;
+      windSpeedEl.textContent = `${Math.round(weather.current.wind_speed_10m)} km/h`;
+      humidityEl.textContent = `${weather.current.relative_humidity_2m}%`;
+      rainEl.textContent = `${weather.current.precipitation} mm`;
+
+      forecastListEl.innerHTML = '';
+      weather.daily.time.forEach((date, index) => {
+        const item = document.createElement('div');
+        item.className = 'forecast-item';
+        item.innerHTML = `
+          <div>
+            <strong>${formatDay(date)}</strong><br>
+            <span class="muted">${weatherCodeMap[weather.daily.weather_code[index]] || 'Unknown'}</span>
+          </div>
+          <div>${Math.round(weather.daily.temperature_2m_max[index])}°</div>
+          <div>${Math.round(weather.daily.temperature_2m_min[index])}°</div>
+        `;
+        forecastListEl.appendChild(item);
+      });
+    }
+
+    async function loadCityWeather(city) {
+      try {
+        setStatus('Searching city...');
+        const place = await searchCity(city);
+        setStatus('Getting latest weather...');
+        const weather = await fetchWeather(place.latitude, place.longitude);
+
+        const labelParts = [place.name, place.admin1, place.country].filter(Boolean);
+        renderWeather(labelParts.join(', '), weather);
+        setStatus('Weather updated.');
+      } catch (error) {
+        weatherContent.classList.add('hidden');
+        setStatus(error.message || 'Something went wrong.', true);
+      }
+    }
+
+    async function loadCurrentLocationWeather() {
+      if (!navigator.geolocation) {
+        setStatus('Geolocation is not supported by your browser.', true);
+        return;
+      }
+
+      setStatus('Getting your location...');
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const weather = await fetchWeather(latitude, longitude);
+          renderWeather('Your location', weather);
+          setStatus('Weather updated from your location.');
+        } catch (error) {
+          weatherContent.classList.add('hidden');
+          setStatus('Failed to load weather for your location.', true);
+        }
+      }, () => {
+        setStatus('Location access denied.', true);
+      });
+    }
+
+    searchBtn.addEventListener('click', () => {
+      const city = cityInput.value.trim();
+      if (!city) {
+        setStatus('Please type a city name.', true);
+        return;
+      }
+      loadCityWeather(city);
+    });
+
+    cityInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchBtn.click();
+    });
+
+    locationBtn.addEventListener('click', loadCurrentLocationWeather);
+
+    loadCityWeather('Paris');
+  </script>
+</body>
+</html>

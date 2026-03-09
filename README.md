@@ -1,2 +1,2 @@
 # RealtimeWeather
-[LIVE PREVIEW](https://github.com/Blue212-debug/RealtimeWeather.git)
+[LIVE PREVIEW](https://blue212-debug.github.io/RealtimeWeather)
